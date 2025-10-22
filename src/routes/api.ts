@@ -87,7 +87,7 @@ export async function handleApi(
   
   // Deployments API
   if (path === '/v1/deployments' && request.method === 'POST') {
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({})) as any;
     return new Response(
       JSON.stringify({
         success: true,

@@ -20,7 +20,7 @@ export async function handleStaging(
           debugMode: true,
           verboseLogging: true
         },
-        version: process.env.CF_VERSION_METADATA?.tag || 'latest',
+        version: 'latest',
         timestamp: new Date().toISOString()
       }, null, 2),
       {
