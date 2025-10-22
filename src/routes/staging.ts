@@ -7,6 +7,11 @@ export async function handleStaging(
 ): Promise<Response> {
   const url = new URL(request.url);
   
+  // Health check endpoint
+  if (url.pathname === '/health') {
+    return new Response('ok', { status: 200 });
+  }
+  
   // Staging environment info
   if (url.pathname === '/') {
     return new Response(
