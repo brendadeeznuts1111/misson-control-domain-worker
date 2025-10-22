@@ -4,13 +4,15 @@ export interface Env {
   CONFIG?: KVNamespace;
   ASSETS?: R2Bucket;
   ENVIRONMENT: string;
+  JWT_SECRET: string;
+  API_KEY_SECRET: string;
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const router = createRouter();
+    const router = createRouter(env);
     
-    return router.handle(request).catch((err) => {
+    return router.fetch(request).catch((err) => {
       console.error('Worker error:', err);
       return new Response('Internal Server Error', { status: 500 });
     });
