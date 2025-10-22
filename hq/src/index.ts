@@ -1,8 +1,8 @@
 import { createRouter } from './router';
 
 export interface Env {
-  CONFIG: KVNamespace;
-  ASSETS: R2Bucket;
+  CONFIG?: KVNamespace;
+  ASSETS?: R2Bucket;
   ENVIRONMENT: string;
 }
 
