@@ -1,6 +1,8 @@
 import { Router } from 'itty-router';
+import { authMiddleware, AuthError } from './auth';
+import type { Env } from './index';
 
-export function createRouter() {
+export function createRouter(env: Env) {
   const router = Router();
 
   router
@@ -69,16 +71,38 @@ export function createRouter() {
         headers: { 'Content-Type': 'text/html' }
       });
     })
-    .get('/api/health', () => 
-      new Response(JSON.stringify({ 
+    .get('/api/health', async (request) => {
+      try {
+        await authMiddleware(request, env);
+      } catch (error) {
+        if (error instanceof AuthError) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: error.status,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        throw error;
+      }
+      return new Response(JSON.stringify({ 
         status: 'healthy', 
         service: 'mission-control-hq',
         timestamp: new Date().toISOString() 
       }), {
         headers: { 'Content-Type': 'application/json' }
-      })
-    )
-    .get('/api/openapi.json', () => {
+      });
+    })
+    .get('/api/openapi.json', async (request) => {
+      try {
+        await authMiddleware(request, env);
+      } catch (error) {
+        if (error instanceof AuthError) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: error.status,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        throw error;
+      }
       const spec = {
         openapi: '3.0.3',
         info: {
@@ -118,12 +142,23 @@ export function createRouter() {
         headers: { 'Content-Type': 'application/json' }
       });
     })
-    .all('/api/*', () => 
-      new Response(JSON.stringify({ error: 'API endpoint not implemented yet' }), { 
+    .all('/api/*', async (request) => {
+      try {
+        await authMiddleware(request, env);
+      } catch (error) {
+        if (error instanceof AuthError) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: error.status,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        throw error;
+      }
+      return new Response(JSON.stringify({ error: 'API endpoint not implemented yet' }), { 
         status: 501,
         headers: { 'Content-Type': 'application/json' }
-      })
-    )
+      });
+    })
     .all('/hub/*', (request) => {
       return new Response(JSON.stringify({ 
         message: 'Hub proxy not configured yet',
