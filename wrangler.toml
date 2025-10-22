@@ -1,0 +1,81 @@
+name = "misson-control-domain-worker"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+account_id = "7a470541a704caaf91e71efccc78fd36"
+
+# Development
+workers_dev = true
+
+# Environment variables (non-sensitive)
+[vars]
+ENVIRONMENT = "production"
+
+# Production Routes (default)
+[[routes]]
+pattern = "misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+[[routes]]
+pattern = "hub.misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+[[routes]]
+pattern = "api.misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+# Staging Environment
+[env.staging]
+name = "misson-control-domain-worker-staging"
+vars = { ENVIRONMENT = "staging" }
+
+[[env.staging.routes]]
+pattern = "staging.misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+# Production Environment (explicit for CI/CD)
+[env.production]
+name = "misson-control-domain-worker-production"
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.routes]]
+pattern = "misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "hub.misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+[[env.production.routes]]
+pattern = "api.misson-control.com"
+zone_id = "ba2906afe573e63c6b32f471d2fe01fe"
+custom_domain = true
+
+# KV Namespaces (create with: wrangler kv:namespace create CACHE)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+
+# [[env.staging.kv_namespaces]]
+# binding = "CACHE"
+# id = "your-staging-kv-namespace-id"
+
+# Durable Objects (uncomment when needed)
+# [[durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiter"
+
+# R2 Buckets (uncomment when needed)
+# [[r2_buckets]]
+# binding = "ASSETS"
+# bucket_name = "misson-control-assets"
+
+# Secrets (add via CLI)
+# wrangler secret put API_KEY
+# wrangler secret put DATABASE_URL
+# wrangler secret put JWT_SECRET

@@ -1,26 +1,67 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Env } from './types';
+import { createRouter } from './lib/router';
+import { corsMiddleware } from './middleware/cors';
+import { authMiddleware } from './middleware/auth';
+import { loggingMiddleware } from './middleware/logging';
+
+// Route handlers
+import { handleMain } from './routes/main';
+import { handleHub } from './routes/hub';
+import { handleStaging } from './routes/staging';
+import { handleApi } from './routes/api';
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const url = new URL(request.url);
-		switch (url.pathname) {
-			case '/message':
-				return new Response('Hello, World!');
-			case '/random':
-				return new Response(crypto.randomUUID());
-			default:
-				return new Response('Not Found', { status: 404 });
-		}
-	},
-} satisfies ExportedHandler<Env>;
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    
+    // Apply global middleware
+    const middlewareChain = [
+      loggingMiddleware,
+      corsMiddleware,
+    ];
+
+    // Determine which domain/route we're on
+    const hostname = url.hostname;
+    const path = url.pathname;
+    
+    // Route based on hostname
+    let handler;
+    let requiresAuth = false;
+    
+    if (hostname.includes('api.')) {
+      handler = handleApi;
+      requiresAuth = true; // API routes need auth
+    } else if (hostname.includes('hub.')) {
+      handler = handleHub;
+    } else if (hostname.includes('staging.')) {
+      handler = handleStaging;
+    } else if (hostname.includes('misson-control.com')) {
+      handler = handleMain;
+    } else {
+      // Workers.dev or unknown domain
+      handler = handleMain;
+    }
+    
+    // Add auth middleware if needed
+    if (requiresAuth) {
+      middlewareChain.push(authMiddleware);
+    }
+    
+    // Process through middleware chain
+    let response: Response | null = null;
+    for (const middleware of middlewareChain) {
+      const result = await middleware(request, env, ctx);
+      if (result) {
+        response = result;
+        break;
+      }
+    }
+    
+    // If no middleware returned a response, use the handler
+    if (!response) {
+      response = await handler(request, env, ctx);
+    }
+    
+    return response;
+  },
+};
