@@ -5,13 +5,26 @@ compatibility_date = "2024-12-01"
 [vars]
 ENVIRONMENT = "development"
 
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "RATE_LIMITS_DEV"
+preview_id = "RATE_LIMITS_PREVIEW"
+
 [env.staging]
 name = "mission-control-hq-staging"
 vars = { ENVIRONMENT = "staging" }
 
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "818488f4ab134ff4b5c8abfc1b0014b4"
+
 [env.production]
 name = "mission-control-hq-production"
 vars = { ENVIRONMENT = "production" }
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "RATE_LIMITS_PROD"
 
 [observability]
 enabled = true

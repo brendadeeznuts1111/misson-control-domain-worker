@@ -3,6 +3,7 @@ import { createRouter } from './router';
 export interface Env {
   CONFIG?: KVNamespace;
   ASSETS?: R2Bucket;
+  RATE_LIMITS: KVNamespace;
   ENVIRONMENT: string;
   JWT_SECRET: string;
   API_KEY_SECRET: string;
