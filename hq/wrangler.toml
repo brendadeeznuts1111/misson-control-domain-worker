@@ -1,0 +1,25 @@
+name = "mission-control-hq"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[env.production]
+routes = [
+  { pattern = "mission-control.com", custom_domain = true },
+  { pattern = "api.mission-control.com/*", custom_domain = true },
+  { pattern = "hub.mission-control.com/*", custom_domain = true }
+]
+
+[vars]
+ENVIRONMENT = "production"
+
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_ID"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "mission-control-assets"
+
+[observability]
+enabled = true
