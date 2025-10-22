@@ -1,6 +1,7 @@
 import { Router } from 'itty-router';
 import { authMiddleware, AuthError } from './auth';
 import { RateLimiter, createRateLimitMiddleware } from './rate-limiter';
+import { getSwaggerUIHTML } from './swagger-ui';
 import type { Env } from './index';
 
 export function createRouter(env: Env) {
@@ -193,6 +194,29 @@ export function createRouter(env: Env) {
       
       let response = new Response(JSON.stringify(spec), {
         headers: { 'Content-Type': 'application/json' }
+      });
+      
+      // Apply rate limit headers
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
+    })
+    .get('/api/docs', async (request) => {
+      // Apply rate limiting (but no auth for public docs)
+      const rateLimitResponse = await publicRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      // Get the base URL for the OpenAPI spec
+      const url = new URL(request.url);
+      const specUrl = `${url.protocol}//${url.host}/api/openapi.json`;
+      
+      let response = new Response(getSwaggerUIHTML(specUrl), {
+        headers: { 
+          'Content-Type': 'text/html',
+          'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+        }
       });
       
       // Apply rate limit headers
