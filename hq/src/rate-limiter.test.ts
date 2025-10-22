@@ -49,8 +49,15 @@ describe('RateLimiter', () => {
     it('should allow requests within limit', async () => {
       const identifier = 'test-user';
       
+      // Use a limiter with higher burst limit for this test
+      const testLimiter = new RateLimiter(env, {
+        windowMs: 60000, 
+        maxRequests: 5,
+        maxBurst: 10, // Higher burst limit to allow rapid testing
+      });
+      
       for (let i = 0; i < 5; i++) {
-        const result = await limiter.checkLimit(identifier);
+        const result = await testLimiter.checkLimit(identifier);
         expect(result.allowed).toBe(true);
         expect(result.remaining).toBe(4 - i);
       }
