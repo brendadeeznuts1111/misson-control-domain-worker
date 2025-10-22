@@ -14,6 +14,11 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
+    // Health check endpoint (for all domains)
+    if (url.pathname === '/health') {
+      return new Response('ok', { status: 200 });
+    }
+    
     // Apply global middleware
     const middlewareChain = [
       loggingMiddleware,
