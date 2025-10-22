@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RateLimiter, RateLimitConfigSchema } from './rate-limiter';
 
 // Mock KV namespace
-class MockKVNamespace implements KVNamespace {
+class MockKVNamespace {
   private store = new Map<string, string>();
   
   async get(key: string): Promise<string | null> {
@@ -18,10 +18,10 @@ class MockKVNamespace implements KVNamespace {
   }
   
   async list(): Promise<any> {
-    return { keys: Array.from(this.store.keys()) };
+    return { keys: Array.from(this.store.keys()).map(name => ({ name })) };
   }
   
-  getWithMetadata(): any {
+  async getWithMetadata(): Promise<any> {
     throw new Error('Not implemented');
   }
   
@@ -32,7 +32,7 @@ class MockKVNamespace implements KVNamespace {
 
 describe('RateLimiter', () => {
   let mockKV: MockKVNamespace;
-  let env: { RATE_LIMITS: KVNamespace };
+  let env: { RATE_LIMITS: any };
   let limiter: RateLimiter;
 
   beforeEach(() => {
