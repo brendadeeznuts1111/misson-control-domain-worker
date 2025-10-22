@@ -1,9 +1,23 @@
 import { Router } from 'itty-router';
 import { authMiddleware, AuthError } from './auth';
+import { RateLimiter, createRateLimitMiddleware } from './rate-limiter';
 import type { Env } from './index';
 
 export function createRouter(env: Env) {
   const router = Router();
+  
+  // Configure rate limits for different user types
+  const authRateLimit = createRateLimitMiddleware(env, {
+    windowMs: 60000, // 1 minute
+    maxRequests: 100, // authenticated users
+    maxBurst: 10,
+  });
+  
+  const publicRateLimit = createRateLimitMiddleware(env, {
+    windowMs: 60000, // 1 minute  
+    maxRequests: 20, // unauthenticated users
+    maxBurst: 5,
+  });
 
   router
     .get('/', () => {
@@ -72,6 +86,21 @@ export function createRouter(env: Env) {
       });
     })
     .get('/api/health', async (request) => {
+      // Check rate limit first
+      let apiKey: string | undefined;
+      const authHeader = request.headers.get('Authorization');
+      const apiKeyHeader = request.headers.get('X-API-Key');
+      
+      if (apiKeyHeader) {
+        apiKey = apiKeyHeader;
+      }
+      
+      // Apply appropriate rate limit
+      const rateLimiter = apiKey || authHeader ? authRateLimit : publicRateLimit;
+      const rateLimitResponse = await rateLimiter(request, apiKey);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      // Then check auth
       try {
         await authMiddleware(request, env);
       } catch (error) {
@@ -83,15 +112,38 @@ export function createRouter(env: Env) {
         }
         throw error;
       }
-      return new Response(JSON.stringify({ 
+      
+      let response = new Response(JSON.stringify({ 
         status: 'healthy', 
         service: 'mission-control-hq',
         timestamp: new Date().toISOString() 
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      // Apply rate limit headers
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
     })
     .get('/api/openapi.json', async (request) => {
+      // Check rate limit first
+      let apiKey: string | undefined;
+      const authHeader = request.headers.get('Authorization');
+      const apiKeyHeader = request.headers.get('X-API-Key');
+      
+      if (apiKeyHeader) {
+        apiKey = apiKeyHeader;
+      }
+      
+      // Apply appropriate rate limit
+      const rateLimiter = apiKey || authHeader ? authRateLimit : publicRateLimit;
+      const rateLimitResponse = await rateLimiter(request, apiKey);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      // Then check auth
       try {
         await authMiddleware(request, env);
       } catch (error) {
@@ -138,11 +190,34 @@ export function createRouter(env: Env) {
           }
         }
       };
-      return new Response(JSON.stringify(spec), {
+      
+      let response = new Response(JSON.stringify(spec), {
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      // Apply rate limit headers
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
     })
     .all('/api/*', async (request) => {
+      // Check rate limit first
+      let apiKey: string | undefined;
+      const authHeader = request.headers.get('Authorization');
+      const apiKeyHeader = request.headers.get('X-API-Key');
+      
+      if (apiKeyHeader) {
+        apiKey = apiKeyHeader;
+      }
+      
+      // Apply appropriate rate limit
+      const rateLimiter = apiKey || authHeader ? authRateLimit : publicRateLimit;
+      const rateLimitResponse = await rateLimiter(request, apiKey);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      // Then check auth
       try {
         await authMiddleware(request, env);
       } catch (error) {
@@ -154,10 +229,18 @@ export function createRouter(env: Env) {
         }
         throw error;
       }
-      return new Response(JSON.stringify({ error: 'API endpoint not implemented yet' }), { 
+      
+      let response = new Response(JSON.stringify({ error: 'API endpoint not implemented yet' }), { 
         status: 501,
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      // Apply rate limit headers
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
     })
     .all('/hub/*', (request) => {
       return new Response(JSON.stringify({ 
