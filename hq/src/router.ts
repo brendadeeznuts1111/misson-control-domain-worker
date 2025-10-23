@@ -287,7 +287,8 @@ export function createRouter(env: Env) {
       let response = new Response(svg, {
         headers: {
           'Content-Type': 'image/svg+xml',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': 'public, max-age=30',
+          'cf-cache-ttl': '30',
         }
       });
       

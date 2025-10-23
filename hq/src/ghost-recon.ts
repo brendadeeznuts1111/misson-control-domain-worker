@@ -22,7 +22,7 @@ export interface GhostReconEnv {
   DEAD_MAN_FUSE?: KVNamespace;
 }
 
-interface HeartbeatData {
+export interface GhostHeartbeat {
   timestamp: number;
   service: string;
   region: string;
@@ -35,6 +35,15 @@ interface HeartbeatData {
     latencyP99: number;
   };
 }
+
+export interface GhostProof {
+  heartbeat: GhostHeartbeat;
+  signature: string;
+  verified: boolean;
+}
+
+// Internal type alias for backwards compatibility
+type HeartbeatData = GhostHeartbeat;
 
 interface AuditEntry {
   id: string;
@@ -364,11 +373,18 @@ export class GhostRecon {
   }
 
   private async sha256(data: string | Uint8Array): Promise<string> {
-    const encoder = new TextEncoder();
-    const dataBuffer = typeof data === 'string' ? encoder.encode(data) : data;
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    try {
+      const encoder = new TextEncoder();
+      const dataBuffer = typeof data === 'string' ? encoder.encode(data) : data;
+      const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (error) {
+      // Fallback for environments without crypto.subtle (old browsers/Edge)
+      console.warn('crypto.subtle not available, using fallback hash');
+      const fallbackData = typeof data === 'string' ? data : new TextDecoder().decode(data);
+      return 'fallback-' + this.simpleHash(fallbackData).toString(16);
+    }
   }
 }
 

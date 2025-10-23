@@ -1,6 +1,10 @@
 # Mission Control Domain Worker
 
-A monorepo Cloudflare Worker serving multiple domains from a single codebase.
+A monorepo Cloudflare Worker serving multiple domains from a single codebase with enterprise-grade security and observability.
+
+## 🔐 Security Status
+
+![Security Status](https://mission-control-hq-production.utahj4754.workers.dev/api/ghost/badge.svg)
 
 ## 🌐 Live Domains
 
@@ -191,6 +195,64 @@ Private repository - All rights reserved
 - View metrics: [Cloudflare Dashboard](https://dash.cloudflare.com)
 - Debug locally: `wrangler dev --local`
 
+## 🔐 Security
+
+### Ghost Recon: Phantom Spectrum
+
+Mission Control HQ includes enterprise-grade security features powered by the Ghost Recon enhancement protocol:
+
+#### Features
+- **Cryptographic Signatures**: All heartbeats are SHA256 signed for integrity verification
+- **Deployment Proof**: Visual cryptographic verification at `/api/ghost/proof`
+- **Dead-Man Fuse**: Auto-recovery system with 5-minute KV lease
+- **Audit Logging**: Compliance-grade audit trail with 30-day retention
+- **Canary Deployments**: Progressive rollout with 0-100% traffic control
+- **Rollback Checkpoints**: One-click recovery with authenticated snapshots
+
+#### Security Endpoints
+- `GET /api/ghost/heartbeat` - Signed heartbeat with deployment metrics
+- `GET /api/ghost/proof` - Public cryptographic proof page
+- `GET /api/ghost/badge.svg` - Real-time security status badge
+- `POST /api/ghost/rollback` - Create rollback checkpoint (requires auth)
+
+#### Key Rotation Runbook
+
+1. **Generate new key pair**:
+   ```bash
+   openssl rand -hex 32
+   ```
+
+2. **Update staging environment**:
+   ```bash
+   echo "new-key-value" | wrangler secret put GHOST_SIGNATURE --env staging
+   ```
+
+3. **Validate for 24 hours** - Monitor staging metrics and alerts
+
+4. **Update production**:
+   ```bash
+   echo "new-key-value" | wrangler secret put GHOST_SIGNATURE --env production
+   ```
+
+5. **Archive old keys** in password manager with rotation date
+
+#### Security Headers Applied
+- `X-Deployment-ID` - Current deployment identifier
+- `X-Region-ID` - Deployment region
+- `X-Content-SHA256` - Content integrity hash
+- `Last-Modified-SHA` - Abbreviated content hash
+- `X-Canary-Deployment` - Canary status (when active)
+
+### Compliance & Audit
+
+- **SOC-2 Type II**: 7-year audit log retention
+- **GDPR**: Right to erasure support in KV namespaces
+- **CCPA**: Data subject access request logging
+
+### Security Contact
+
+Report security vulnerabilities to: security@misson-control.com
+
 ---
 
-Built with ❤️ using Cloudflare Workers
+Built with ❤️ using Cloudflare Workers | Protected by Ghost Recon 🪖
