@@ -24,8 +24,12 @@ export interface RateLimitResult {
 export class RateLimiter {
   constructor(
     private env: RateLimitEnv,
-    private config: RateLimitConfig = RateLimitConfigSchema.parse({})
-  ) {}
+    config?: Partial<RateLimitConfig>
+  ) {
+    this.config = RateLimitConfigSchema.parse(config || {});
+  }
+  
+  private config: RateLimitConfig;
 
   /**
    * Check if a request is allowed based on rate limits

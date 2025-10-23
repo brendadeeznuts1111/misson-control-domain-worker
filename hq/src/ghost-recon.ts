@@ -2,12 +2,12 @@ import { z } from 'zod';
 
 export const GhostReconConfigSchema = z.object({
   signatureKey: z.string().optional(),
-  publicKeyUrl: z.string().default('/api/ghost.pub'),
-  regionId: z.string().default('us-east-1'),
+  publicKeyUrl: z.string().optional().default('/api/ghost.pub'),
+  regionId: z.string().optional().default('us-east-1'),
   deploymentId: z.string().optional(),
-  canaryPercent: z.number().min(0).max(100).default(0),
+  canaryPercent: z.number().min(0).max(100).optional().default(0),
   metricsEndpoint: z.string().optional(),
-  auditLogKV: z.string().default('AUDIT_LOG'),
+  auditLogKV: z.string().optional().default('AUDIT_LOG'),
 });
 
 export type GhostReconConfig = z.infer<typeof GhostReconConfigSchema>;
@@ -49,8 +49,12 @@ interface AuditEntry {
 export class GhostRecon {
   constructor(
     private env: GhostReconEnv,
-    private config: GhostReconConfig = GhostReconConfigSchema.parse({})
-  ) {}
+    config?: Partial<GhostReconConfig>
+  ) {
+    this.config = GhostReconConfigSchema.parse(config || {});
+  }
+  
+  private config: GhostReconConfig;
 
   /**
    * Generate cryptographic signature for heartbeat data
