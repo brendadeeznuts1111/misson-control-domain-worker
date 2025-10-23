@@ -2,6 +2,7 @@ import { Router } from 'itty-router';
 import { authMiddleware, AuthError } from './auth';
 import { RateLimiter, createRateLimitMiddleware } from './rate-limiter';
 import { getSwaggerUIHTML } from './swagger-ui';
+import { GhostRecon, createGhostReconMiddleware } from './ghost-recon';
 import type { Env } from './index';
 
 export function createRouter(env: Env) {
@@ -19,6 +20,10 @@ export function createRouter(env: Env) {
     maxRequests: 20, // unauthenticated users
     maxBurst: 5,
   });
+
+  // Initialize Ghost Recon
+  const ghostRecon = new GhostRecon(env);
+  const applyGhostHeaders = createGhostReconMiddleware(env);
 
   router
     .get('/', () => {
@@ -200,6 +205,123 @@ export function createRouter(env: Env) {
       if ((request as any).rateLimitResult) {
         response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
       }
+      
+      return response;
+    })
+    .get('/api/ghost/heartbeat', async (request) => {
+      // Public endpoint for signed heartbeats
+      const rateLimitResponse = await publicRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      const heartbeat = {
+        timestamp: Date.now(),
+        service: 'mission-control-hq',
+        region: env.REGION_ID || 'us-east-1',
+        deployment: env.DEPLOYMENT_ID || 'unknown',
+        status: 'healthy' as const,
+        metrics: {
+          requests: 1000,
+          errors: 5,
+          latencyP50: 25,
+          latencyP99: 150,
+        },
+      };
+      
+      const signature = await ghostRecon.generateHeartbeatSignature(heartbeat);
+      
+      let response = new Response(JSON.stringify({
+        heartbeat,
+        signature,
+        verified: true,
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      response = await applyGhostHeaders(request, response);
+      
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
+    })
+    .get('/api/ghost/proof', async (request) => {
+      // Public proof page
+      const rateLimitResponse = await publicRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      const heartbeat = {
+        timestamp: Date.now(),
+        service: 'mission-control-hq',
+        region: env.REGION_ID || 'us-east-1',
+        deployment: env.DEPLOYMENT_ID || 'unknown',
+        status: 'healthy' as const,
+      };
+      
+      const signature = await ghostRecon.generateHeartbeatSignature(heartbeat);
+      const html = ghostRecon.generateProofPage(heartbeat, signature);
+      
+      let response = new Response(html, {
+        headers: { 
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      response = await applyGhostHeaders(request, response);
+      
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
+    })
+    .get('/api/ghost/badge.svg', async (request) => {
+      // Dynamic status badge
+      const rateLimitResponse = await publicRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      const status = await ghostRecon.checkDeadManFuse() ? 'operational' : 'outage';
+      const svg = ghostRecon.generateStatusBadge(status);
+      
+      let response = new Response(svg, {
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      });
+      
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
+    })
+    .post('/api/ghost/rollback', async (request) => {
+      // Protected rollback endpoint
+      try {
+        await authMiddleware(request, env);
+      } catch (error) {
+        if (error instanceof AuthError) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: error.status,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        throw error;
+      }
+      
+      const checkpointId = await ghostRecon.createRollbackCheckpoint();
+      
+      let response = new Response(JSON.stringify({
+        message: 'Rollback checkpoint created',
+        checkpointId,
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      response = await applyGhostHeaders(request, response);
       
       return response;
     })

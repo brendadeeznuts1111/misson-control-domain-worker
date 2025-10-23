@@ -4,27 +4,66 @@ compatibility_date = "2024-12-01"
 
 [vars]
 ENVIRONMENT = "development"
+REGION_ID = "us-east-1"
+DEPLOYMENT_ID = "dev-local"
+CANARY_PERCENT = "0"
 
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
 id = "RATE_LIMITS_DEV"
 preview_id = "RATE_LIMITS_PREVIEW"
 
+[[kv_namespaces]]
+binding = "AUDIT_LOG"
+id = "AUDIT_LOG_DEV"
+preview_id = "AUDIT_LOG_PREVIEW"
+
+[[kv_namespaces]]
+binding = "DEAD_MAN_FUSE"
+id = "DEAD_MAN_FUSE_DEV"
+preview_id = "DEAD_MAN_FUSE_PREVIEW"
+
 [env.staging]
 name = "mission-control-hq-staging"
-vars = { ENVIRONMENT = "staging" }
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+REGION_ID = "us-west-2"
+DEPLOYMENT_ID = "staging-v1"
+CANARY_PERCENT = "10"
 
 [[env.staging.kv_namespaces]]
 binding = "RATE_LIMITS"
 id = "818488f4ab134ff4b5c8abfc1b0014b4"
 
+[[env.staging.kv_namespaces]]
+binding = "AUDIT_LOG"
+id = "AUDIT_LOG_STAGING"
+
+[[env.staging.kv_namespaces]]
+binding = "DEAD_MAN_FUSE"
+id = "DEAD_MAN_FUSE_STAGING"
+
 [env.production]
 name = "mission-control-hq-production"
-vars = { ENVIRONMENT = "production" }
+
+[env.production.vars]
+ENVIRONMENT = "production"
+REGION_ID = "us-east-1"
+DEPLOYMENT_ID = "prod-v1"
+CANARY_PERCENT = "0"
 
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMITS"
 id = "RATE_LIMITS_PROD"
+
+[[env.production.kv_namespaces]]
+binding = "AUDIT_LOG"
+id = "AUDIT_LOG_PROD"
+
+[[env.production.kv_namespaces]]
+binding = "DEAD_MAN_FUSE"
+id = "DEAD_MAN_FUSE_PROD"
 
 [observability]
 enabled = true

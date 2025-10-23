@@ -7,6 +7,13 @@ export interface Env {
   ENVIRONMENT: string;
   JWT_SECRET: string;
   API_KEY_SECRET: string;
+  GHOST_SIGNATURE?: string;
+  GHOST_PUBLIC_KEY?: string;
+  DEPLOYMENT_ID?: string;
+  REGION_ID?: string;
+  CANARY_PERCENT?: string;
+  AUDIT_LOG?: KVNamespace;
+  DEAD_MAN_FUSE?: KVNamespace;
 }
 
 export default {
