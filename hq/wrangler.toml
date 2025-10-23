@@ -55,15 +55,15 @@ CANARY_PERCENT = "0"
 
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "RATE_LIMITS_PROD"
+id = "4baff5e9e15140a781b6440d6d797694"
 
 [[env.production.kv_namespaces]]
 binding = "AUDIT_LOG"
-id = "AUDIT_LOG_PROD"
+id = "a615dbc35dee45808d3971ebf17adb19"
 
 [[env.production.kv_namespaces]]
 binding = "DEAD_MAN_FUSE"
-id = "DEAD_MAN_FUSE_PROD"
+id = "bd868c4bc23c45fe97a661b2d39159da"
 
 [observability]
 enabled = true
