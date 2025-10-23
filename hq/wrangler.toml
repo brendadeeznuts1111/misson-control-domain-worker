@@ -38,11 +38,11 @@ id = "818488f4ab134ff4b5c8abfc1b0014b4"
 
 [[env.staging.kv_namespaces]]
 binding = "AUDIT_LOG"
-id = "AUDIT_LOG_STAGING"
+id = "51fe5bc11953476982404ad01edc7e30"
 
 [[env.staging.kv_namespaces]]
 binding = "DEAD_MAN_FUSE"
-id = "DEAD_MAN_FUSE_STAGING"
+id = "94a9fa3289434dbda96b02acf86b8bea"
 
 [env.production]
 name = "mission-control-hq-production"
