@@ -130,32 +130,9 @@ export function createRouter(env: Env) {
       return response;
     })
     .get('/api/openapi.json', async (request) => {
-      // Check rate limit first
-      let apiKey: string | undefined;
-      const authHeader = request.headers.get('Authorization');
-      const apiKeyHeader = request.headers.get('X-API-Key');
-      
-      if (apiKeyHeader) {
-        apiKey = apiKeyHeader;
-      }
-      
-      // Apply appropriate rate limit
-      const rateLimiter = apiKey || authHeader ? authRateLimit : publicRateLimit;
-      const rateLimitResponse = await rateLimiter(request, apiKey);
+      // Apply rate limiting (public access for docs)
+      const rateLimitResponse = await publicRateLimit(request);
       if (rateLimitResponse) return rateLimitResponse;
-      
-      // Then check auth
-      try {
-        await authMiddleware(request, env);
-      } catch (error) {
-        if (error instanceof AuthError) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: error.status,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        throw error;
-      }
       const spec = {
         openapi: '3.0.3',
         info: {
