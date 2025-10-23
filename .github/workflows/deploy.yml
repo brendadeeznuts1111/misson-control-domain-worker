@@ -52,12 +52,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install SOPS
+        run: |
+          curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.amd64
+          sudo mv sops-v3.8.1.linux.amd64 /usr/local/bin/sops
+          sudo chmod +x /usr/local/bin/sops
+      
+      - name: Decrypt secrets
+        if: ${{ secrets.SOPS_AGE_KEY != '' }}
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          mkdir -p ~/.config/sops/age
+          echo "$SOPS_AGE_KEY" > ~/.config/sops/age/keys.txt
+          if [ -f hq/.env.enc ]; then
+            sops --decrypt hq/.env.enc > hq/.env
+          fi
+      
       - name: Deploy to Staging
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env staging
+          workingDirectory: ./hq
+      
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm -f hq/.env
+          rm -f ~/.config/sops/age/keys.txt
       
       - name: Test Staging Deployment
         run: |
@@ -81,12 +105,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install SOPS
+        run: |
+          curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.amd64
+          sudo mv sops-v3.8.1.linux.amd64 /usr/local/bin/sops
+          sudo chmod +x /usr/local/bin/sops
+      
+      - name: Decrypt secrets
+        if: ${{ secrets.SOPS_AGE_KEY != '' }}
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          mkdir -p ~/.config/sops/age
+          echo "$SOPS_AGE_KEY" > ~/.config/sops/age/keys.txt
+          if [ -f hq/.env.enc ]; then
+            sops --decrypt hq/.env.enc > hq/.env
+          fi
+      
       - name: Deploy to Production
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env production
+          workingDirectory: ./hq
+      
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm -f hq/.env
+          rm -f ~/.config/sops/age/keys.txt
       
       - name: Test Production Deployment
         run: |

@@ -65,5 +65,8 @@ id = "a615dbc35dee45808d3971ebf17adb19"
 binding = "DEAD_MAN_FUSE"
 id = "bd868c4bc23c45fe97a661b2d39159da"
 
+[triggers]
+crons = ["* * * * *"] # Every minute for health checks
+
 [observability]
 enabled = true

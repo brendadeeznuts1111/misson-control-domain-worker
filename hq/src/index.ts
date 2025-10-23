@@ -1,4 +1,5 @@
 import { createRouter } from './router';
+import { handleScheduled } from './pagerduty';
 
 export interface Env {
   CONFIG?: KVNamespace;
@@ -14,6 +15,9 @@ export interface Env {
   CANARY_PERCENT?: string;
   AUDIT_LOG?: KVNamespace;
   DEAD_MAN_FUSE?: KVNamespace;
+  HEALTH_CHECK?: KVNamespace;
+  PAGERDUTY_INTEGRATION_KEY?: string;
+  PAGERDUTY_SERVICE_ID?: string;
 }
 
 export default {
@@ -24,5 +28,12 @@ export default {
       console.error('Worker error:', err);
       return new Response('Internal Server Error', { status: 500 });
     });
+  },
+  
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Run PagerDuty health checks every 30 seconds
+    if (env.PAGERDUTY_INTEGRATION_KEY) {
+      await handleScheduled(env as any, ctx);
+    }
   },
 };
