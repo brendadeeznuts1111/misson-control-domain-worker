@@ -5,6 +5,9 @@ A monorepo Cloudflare Worker serving multiple domains from a single codebase wit
 ## 🔐 Security Status
 
 ![Security Status](https://mission-control-hq-production.utahj4754.workers.dev/api/ghost/badge.svg)
+[![Monitoring](https://img.shields.io/badge/Monitoring-PagerDuty-00C389)](https://mission-control.pagerduty.com)
+[![Deployment](https://img.shields.io/badge/Deployment-Canary_Ready-4ade80)](./hq/scripts/canary-ramp.sh)
+[![Secrets](https://img.shields.io/badge/Secrets-SOPS_Encrypted-667eea)](./hq/.sops.yaml)
 
 ## 🌐 Live Domains
 
@@ -19,15 +22,38 @@ A monorepo Cloudflare Worker serving multiple domains from a single codebase wit
 # Install dependencies
 npm install
 
+# Set up secrets (first time only)
+cd hq && ./scripts/encrypt-secrets.sh
+
 # Run locally
 wrangler dev
 
-# Deploy to staging
-wrangler deploy --env staging
+# Deploy to staging (with canary)
+./scripts/canary-ramp.sh staging 10
 
 # Deploy to production
 wrangler deploy --env production
 ```
+
+## ⚡ New Features (v0.4.1+)
+
+### 🚨 PagerDuty Monitoring
+- Automatic health checks every minute
+- 2-minute failure threshold before alerting
+- Signature validation monitoring
+- Auto-resolve when service recovers
+
+### 🚀 Progressive Canary Deployments
+- Automated 10% → 50% → 100% ramp
+- P95 latency monitoring
+- Emergency rollback capability
+- Metrics validation at each stage
+
+### 🔐 SOPS Secret Management
+- Age encryption for sensitive data
+- GitHub Actions integration
+- Secure key rotation workflow
+- No plain text secrets in repo
 
 ## 📁 Project Structure
 

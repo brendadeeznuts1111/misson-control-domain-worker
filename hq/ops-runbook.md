@@ -229,6 +229,67 @@ chmod +x health-check.sh
 3. **Security Team**: security@misson-control.com
 4. **Platform Team**: platform@misson-control.com
 
+## 🔍 Advanced Debugging with Cloudflare Trace
+
+### Using Trace Request Tool
+
+Cloudflare's Trace feature helps debug request routing through the CDN:
+
+```bash
+# Access via Dashboard
+# https://dash.cloudflare.com → Your Domain → Trace
+
+# Test scenarios to trace:
+
+# 1. Rate limit behavior
+curl -H "CF-Ray: trace-test" \
+  https://mission-control-hq-production.utahj4754.workers.dev/api/health
+
+# 2. Canary routing
+curl -H "CF-Connecting-IP: 192.168.1.100" \
+  https://mission-control-hq-production.utahj4754.workers.dev/api/ghost/heartbeat
+
+# 3. Authentication flow
+curl -H "Authorization: Bearer invalid-token" \
+  https://mission-control-hq-production.utahj4754.workers.dev/api/health
+
+# 4. CORS validation
+curl -H "Origin: https://external-site.com" \
+  -H "Access-Control-Request-Method: POST" \
+  -X OPTIONS \
+  https://mission-control-hq-production.utahj4754.workers.dev/api/ghost/rollback
+```
+
+### Trace Analysis Points
+
+1. **Request Headers**: Verify headers are passed correctly
+2. **Rule Application**: Check which rules fire in order
+3. **Worker Response**: Validate worker execution
+4. **Cache Status**: Confirm cache behavior
+5. **Security Features**: WAF, rate limiting, bot management
+
+### Common Trace Patterns
+
+```yaml
+Successful Request:
+  - Firewall: Pass
+  - Rate Limit: Pass  
+  - Worker Route: Match
+  - Cache: Miss/Hit
+  - Response: 200 OK
+
+Rate Limited:
+  - Firewall: Pass
+  - Rate Limit: Block (429)
+  - Worker Route: No execution
+
+Auth Failure:
+  - Firewall: Pass
+  - Rate Limit: Pass
+  - Worker Route: Match
+  - Worker Logic: 401 Unauthorized
+```
+
 ---
 
-*Last Updated: v0.4.1 | Ghost Recon: Phantom Spectrum*
+*Last Updated: v0.5.0 | Enhanced with Trace Debugging*
