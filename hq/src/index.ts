@@ -18,6 +18,7 @@ export interface Env {
   HEALTH_CHECK?: KVNamespace;
   PAGERDUTY_INTEGRATION_KEY?: string;
   PAGERDUTY_SERVICE_ID?: string;
+  INTERNAL_API_KEY?: string;
 }
 
 export default {

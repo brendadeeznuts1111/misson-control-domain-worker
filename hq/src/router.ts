@@ -3,6 +3,7 @@ import { authMiddleware, AuthError } from './auth';
 import { RateLimiter, createRateLimitMiddleware } from './rate-limiter';
 import { getSwaggerUIHTML } from './swagger-ui';
 import { GhostRecon, createGhostReconMiddleware } from './ghost-recon';
+import { HubProxy } from './hub-proxy';
 import type { Env } from './index';
 
 export function createRouter(env: Env) {
@@ -24,6 +25,9 @@ export function createRouter(env: Env) {
   // Initialize Ghost Recon
   const ghostRecon = new GhostRecon(env);
   const applyGhostHeaders = createGhostReconMiddleware(env);
+  
+  // Initialize Hub Proxy
+  const hubProxy = new HubProxy(env);
 
   router
     .get('/', () => {
@@ -366,14 +370,22 @@ export function createRouter(env: Env) {
       
       return response;
     })
-    .all('/hub/*', (request) => {
-      return new Response(JSON.stringify({ 
-        message: 'Hub proxy not configured yet',
-        path: new URL(request.url).pathname
-      }), { 
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    .get('/hub', () => hubProxy.getDashboard())
+    .get('/hub/status', () => hubProxy.getStatus())
+    .all('/hub/*', async (request) => {
+      // Apply rate limiting for hub requests
+      const rateLimitResponse = await publicRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      
+      // Handle hub proxy requests
+      let response = await hubProxy.handleRequest(request);
+      
+      // Apply rate limit headers
+      if ((request as any).rateLimitResult) {
+        response = RateLimiter.applyHeaders(response, (request as any).rateLimitResult);
+      }
+      
+      return response;
     })
     .all('*', () => new Response('Not Found', { status: 404 }));
 

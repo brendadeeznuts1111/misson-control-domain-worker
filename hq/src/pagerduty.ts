@@ -75,7 +75,7 @@ export class PagerDutyMonitor {
         };
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       
       // Verify signature exists and is valid
       if (!data.signature || !data.verified) {
