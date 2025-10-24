@@ -4,6 +4,7 @@ import { RateLimiter, createRateLimitMiddleware } from './rate-limiter';
 import { getSwaggerUIHTML } from './swagger-ui';
 import { GhostRecon, createGhostReconMiddleware } from './ghost-recon';
 import { HubProxy } from './hub-proxy';
+import { StructuredLogger, createLoggingMiddleware, logResponse } from './logger';
 import type { Env } from './index';
 
 export function createRouter(env: Env) {
@@ -28,8 +29,13 @@ export function createRouter(env: Env) {
   
   // Initialize Hub Proxy
   const hubProxy = new HubProxy(env);
+  
+  // Initialize logging middleware
+  const loggingMiddleware = createLoggingMiddleware(env);
 
   router
+    // Apply logging to all requests
+    .all('*', loggingMiddleware)
     .get('/', () => {
       const html = `
         <!DOCTYPE html>

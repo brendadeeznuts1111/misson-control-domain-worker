@@ -41,12 +41,12 @@ describe('Auth Module', () => {
   });
 
   describe('API Key Operations', () => {
-    it('should verify a valid API key', () => {
-      expect(verifyAPIKey(apiKeySecret, apiKeySecret)).toBe(true);
+    it('should verify a valid API key', async () => {
+      expect(await verifyAPIKey(apiKeySecret, apiKeySecret)).toBe(true);
     });
 
-    it('should reject an invalid API key', () => {
-      expect(verifyAPIKey('wrong-key', apiKeySecret)).toBe(false);
+    it('should reject an invalid API key', async () => {
+      expect(await verifyAPIKey('wrong-key', apiKeySecret)).toBe(false);
     });
   });
 

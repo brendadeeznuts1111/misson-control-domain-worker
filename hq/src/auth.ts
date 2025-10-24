@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import { timingSafeEqual, hashAPIKey } from './security-utils';
 import { z } from 'zod';
 
 const TokenPayloadSchema = z.object({
@@ -69,8 +70,9 @@ function parseExpiration(expiresIn: string): number {
   }
 }
 
-export function verifyAPIKey(key: string, secret: string): boolean {
-  return key === secret;
+export async function verifyAPIKey(key: string, secret: string): Promise<boolean> {
+  // Use timing-safe comparison to prevent timing attacks
+  return await timingSafeEqual(key, secret);
 }
 
 export async function authMiddleware(
@@ -86,7 +88,8 @@ export async function authMiddleware(
   }
   
   if (apiKey) {
-    if (!verifyAPIKey(apiKey, env.API_KEY_SECRET)) {
+    const isValid = await verifyAPIKey(apiKey, env.API_KEY_SECRET);
+    if (!isValid) {
       throw new AuthError('Invalid API key');
     }
     return {

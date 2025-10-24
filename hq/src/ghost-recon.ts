@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { generateHMAC, verifyHMAC } from './security-utils';
 
 export const GhostReconConfigSchema = z.object({
   signatureKey: z.string().optional(),
@@ -70,20 +71,40 @@ export class GhostRecon {
    */
   async generateHeartbeatSignature(data: HeartbeatData): Promise<string> {
     const payload = JSON.stringify(data);
+    
+    // Use proper HMAC-SHA256 signature
+    const signatureKey = this.env.GHOST_SIGNATURE;
+    if (!signatureKey) {
+      throw new Error('GHOST_SIGNATURE environment variable not set - cannot generate secure signatures');
+    }
+    
+    const signature = await generateHMAC(signatureKey, payload);
     const hash = await this.sha256(payload);
     
-    // In production, this would use minisign
-    // For now, we'll use a simple HMAC-like signature
-    const signature = this.env.GHOST_SIGNATURE || 'unsigned';
-    return `${hash}:${signature}`;
+    // Return format: sha256:hmac_signature
+    return `sha256:${hash}:${signature}`;
   }
 
   /**
    * Verify heartbeat signature
    */
   async verifyHeartbeatSignature(data: HeartbeatData, signature: string): Promise<boolean> {
-    const expectedSignature = await this.generateHeartbeatSignature(data);
-    return signature === expectedSignature;
+    const signatureKey = this.env.GHOST_SIGNATURE;
+    if (!signatureKey) {
+      return false; // Cannot verify without key
+    }
+    
+    // Parse signature format: sha256:hash:hmac
+    const parts = signature.split(':');
+    if (parts.length !== 3 || parts[0] !== 'sha256') {
+      return false;
+    }
+    
+    const payload = JSON.stringify(data);
+    const providedHmac = parts[2];
+    
+    // Use timing-safe comparison
+    return await verifyHMAC(signatureKey, payload, providedHmac);
   }
 
   /**

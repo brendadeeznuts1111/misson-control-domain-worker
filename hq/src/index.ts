@@ -1,5 +1,6 @@
 import { createRouter } from './router';
 import { handleScheduled } from './pagerduty';
+import { StructuredLogger, logResponse } from './logger';
 
 export interface Env {
   CONFIG?: KVNamespace;
@@ -24,11 +25,48 @@ export interface Env {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const router = createRouter(env);
+    const startTime = Date.now();
     
-    return router.fetch(request).catch((err) => {
-      console.error('Worker error:', err);
-      return new Response('Internal Server Error', { status: 500 });
-    });
+    try {
+      const response = await router.fetch(request);
+      // Add logging to response
+      return logResponse(request, response);
+    } catch (err) {
+      // Create logger for error handling
+      const logger = StructuredLogger.fromRequest(request, env);
+      
+      if (err instanceof Error) {
+        logger.error('Worker error', err, {
+          path: new URL(request.url).pathname,
+          method: request.method,
+          duration: Date.now() - startTime
+        });
+      } else {
+        logger.error('Unknown worker error', undefined, {
+          error: String(err),
+          path: new URL(request.url).pathname,
+          method: request.method,
+          duration: Date.now() - startTime
+        });
+      }
+      
+      // Return error response with correlation ID
+      const headers = new Headers();
+      headers.set('X-Correlation-ID', logger['context'].correlationId);
+      headers.set('Content-Type', 'application/json');
+      
+      return new Response(
+        JSON.stringify({
+          error: 'Internal Server Error',
+          correlationId: logger['context'].correlationId,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500,
+          headers
+        }
+      );
+    }
   },
   
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
